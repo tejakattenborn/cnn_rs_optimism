@@ -1,4 +1,15 @@
 
+
+############## Description
+
+# Estimate the accuracy using dependent (spatially autocorrelated) and independent data (spatial block cross validation).
+# Manuscript: Kattenborn et al. > Spatially autocorrelated training and validation samples inflate performance assessment of convolutional neural networks
+# teja dot kattenborn at uni uni minus leipzig dot de
+
+
+############## Code
+
+
 # libraries + path -----------------------------------------------------------
 
 pkgs <- c("keras", "tidyverse", "tibble", "tensorflow", "reticulate", "doParallel", "foreach", "abind", "raster")
