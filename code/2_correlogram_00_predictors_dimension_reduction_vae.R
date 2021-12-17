@@ -1,14 +1,14 @@
 
 
+############## Description
+
+# train the variational autoencoder with image tiles and apply it to encode all image tiles into latent space
+# Manuscript: Kattenborn et al. > Spatially autocorrelated training and validation samples inflate performance assessment of convolutional neural networks
+# teja dot kattenborn at uni uni minus leipzig dot de
 
 
-#### CHECK / TODO
+############## Code
 
-# write metadata of test files to disk
-# maybe set float 32 here as in cvae example: decoder(z_sample)
-# check further integers (e.g. in show classes or fashion output)
-
-# https://github.com/rstudio/keras/blob/master/vignettes/examples/eager_cvae.R
 
 library(keras)
 library(tensorflow)
@@ -28,29 +28,19 @@ tf$config$experimental$set_memory_growth(gpus[[1]], TRUE)
 
 # Setup and preprocessing -------------------------------------------------
 
-
 #set dirs
-#workdir = "/home/sysgen/Teja/"
-workdir = "D:/"
+
+workdir = "PATH"
 setwd(workdir)
 path_img = "cvae_sac/input_img_jpeg"
 outdir = "cvae_sac/1_results/"
 checkpoint_dir = paste0(outdir, "checkpoints_cvae")
-
-# workdir = "D:/"
-# setwd(workdir)
-# path_img = "data_ortho_confobi_sac/input_img_jpeg"
-# #path_meta = paste0(path_img,"metadata_with_try.txt")
-# outdir = "./data_ortho_confobi_sac/1_results/"
-# checkpoint_dir = paste0(outdir, "checkpoints_cvae")
-
 
 # image settings
 xres = 256L #256L
 yres = 256L #256L
 no_bands = 3L
 no_test_samples = 100
-
 
 # hyperparameters
 latent_dim <- 200L
@@ -60,19 +50,6 @@ num_epochs <- 300
 batches_per_epoch <- buffer_size / batch_size
 grid_axis = 0.3 # range for the latent feature space for generating synthetic imagery 
 
-# set seed
-#tf$compat$v1$set_random_seed(as.integer(28))
-
-# set memory growth policy
-#gpu1 <- tf$config$experimental$get_visible_devices('GPU')[[1]]
-#gpu2 <- tf$config$experimental$get_visible_devices('GPU')[[2]]
-#tf$config$experimental$set_memory_growth(device = gpu1, enable = TRUE)
-#tf$config$experimental$set_memory_growth(device = gpu2, enable = TRUE)
-
-#strategy <- tf$distribute$MirroredStrategy()
-#strategy$num_replicas_in_sync
-
-
 
 # Loading Data ----------------------------------------------------------------
 
@@ -80,23 +57,10 @@ grid_axis = 0.3 # range for the latent feature space for generating synthetic im
 path_img = list.files(path_img, full.names = T, pattern = "_CFB", recursive = T)
 path_img = path_img[sample(1:length(path_img), size = buffer_size)]
 
-# split test data (10%) and save to disk
-#testIdx = sample(x = 1:nrow(img_meta), size = floor(nrow(img_meta)/10), replace = F)
+# split test data (10%)
 testIdx = sample(x = 1:length(path_img), size = no_test_samples, replace = F)
 test_img = path_img[testIdx]
-#save(test_img, file = paste0(outdir, "test_img.RData"), overwrite = T)
-#test_img_meta = img_meta[testIdx,]
-#save(test_img_meta, file = paste0(outdir, "test_img_meta.RData"), overwrite = T)
 train_img = path_img[-testIdx]
-#train_img_meta = img_meta[-testIdx,]
-
-
-# just for testing
-#train_img_meta$mean_3113[is.na(train_img_meta$mean_3113)] = 0
-#test_img_meta$mean_3113[is.na(test_img_meta$mean_3113)] = 0
-
-#train_data = tibble(img = train_img, meta = train_img_meta$mean_3113)
-#test_data = tibble(img = test_img, meta = test_img_meta$mean_3113)
 
 train_data = tibble(img = train_img)
 test_data = tibble(img = test_img)
@@ -105,11 +69,7 @@ head(train_data)
 dim(train_data)
 train_data$img
 
-#sum(is.na(train_data$meta))
-
-
 # tfdatasets input pipeline -----------------------------------------------
-
 
 create_dataset <- function(data,
                            train, # logical. TRUE for augmentation of training data
@@ -117,9 +77,7 @@ create_dataset <- function(data,
                            epochs,
                            shuffle, # logical. default TRUE, set FALSE for test data
                            dataset_size){ # numeric. number of samples per epoch the model will be trained on
-  
-  
-  if(shuffle){
+      if(shuffle){
     dataset = data %>%
       tensor_slices_dataset() %>%
       dataset_shuffle(buffer_size = length(data$img), reshuffle_each_iteration = TRUE)
@@ -127,38 +85,19 @@ create_dataset <- function(data,
     dataset = data %>%
       tensor_slices_dataset() 
   } 
-  
-  dataset = dataset %>%
+    dataset = dataset %>%
     dataset_map(~.x %>% purrr::list_modify( # read files and decode png
-      #img = tf$image$decode_png(tf$io$read_file(.x$img), channels = no_bands)
       img = tf$image$decode_jpeg(tf$io$read_file(.x$img), channels = no_bands, try_recover_truncated = TRUE, acceptable_fraction=0.5) %>%
-        
-        tf$image$convert_image_dtype(dtype = tf$float32) %>% 
+                tf$image$convert_image_dtype(dtype = tf$float32) %>% 
         tf$image$resize(preserve_aspect_ratio = TRUE, size = as.integer(c(ceiling(xres*2.1), ceiling(yres*2.1)))) %>%
         tf$image$resize_with_crop_or_pad(target_height = yres, target_width = xres)
-      
-      #tf$image$resize_with_crop_or_pad(target_height = yres, target_width = xres)
-      #tf$squeeze() %>% # removes dimensions of size 1 from the shape of a tensor
-      # # resize all images to common resolution  https://www.tensorflow.org/api_docs/python/tf/image/resize_with_crop_or_pad
-      #), num_parallel_calls = parallel::detectCores())  %>%
-    #), num_parallel_calls = tf$data$experimental$AUTOTUNE) %>%
     ), num_parallel_calls = NULL) %>%
-    #), num_parallel_calls = 4)
-    
-    
-    #dataset = dataset %>%
-    #dataset_prepare(x = img, named_features = TRUE, batch_size = batch, drop_remainder = TRUE) %>% 
     dataset_batch(batch, drop_remainder = TRUE) %>%
-    #dataset_prepare(x = img, named_features = TRUE, batch_size = batch, drop_remainder = TRUE) %>% # to include further variables
-    #dataset_prefetch(buffer_size = tf$data$experimental$AUTOTUNE)
     dataset_prefetch_to_device("/gpu:0", buffer_size = tf$data$experimental$AUTOTUNE)
 }
 
 
-
-
 # Parameters ----------------------------------------------------------------
-
 
 dataset_size <- length(train_data$img)
 
@@ -171,16 +110,11 @@ example
 plot(as.raster(as.array(example$img[[1]][,,1:3])))
 
 
-
-
-
-
 # Model -------------------------------------------------------------------
 
 
 encoder_model <- function(name = NULL) {
   keras_model_custom(name = name, function(self) {
-    
     
     self$conv1 <-
       layer_conv_2d( # to 128
@@ -235,7 +169,7 @@ encoder_model <- function(name = NULL) {
         self$conv4() %>%
         self$conv5() %>%
         self$flatten() %>%
-        self$dense() #%>%
+        self$dense()
     }
   })
 }
@@ -313,10 +247,7 @@ decoder_model <- function(name = NULL) {
   })
 }
 
-
-
 optimizer <- tf$keras$optimizers$Adam(1e-3)
-
 
 
 compute_kernel <- function(x, y) {
@@ -338,8 +269,6 @@ compute_mmd <- function(x, y, sigma_sqr = 1) {
 }
 
 
-
-
 # Output utilities --------------------------------------------------------
 
 num_examples_to_generate <- 64
@@ -358,18 +287,7 @@ generate_random_tiles <- function(epoch) {
       xaxs = 'i',
       yaxs = 'i')
   for (i in 1:64) {
-    
-    # for grey-scale only
-    #img <- t(apply(img, 2, rev))
-    # image(
-    #   1:xres,
-    #   1:yres,
-    #   img * 127.5 + 127.5,
-    #   col = gray((0:255) / 255),
-    #   xaxt = 'n',
-    #   yaxt = 'n'
-    #   )
-    
+
     #for RGB
     img <- as.array(predictions[i, , , ])
     plotArrayAsImage(as.array(img))
@@ -378,22 +296,13 @@ generate_random_tiles <- function(epoch) {
 }
 
 
-
 show_latent_space <- function(epoch) {
   
   iter <- make_iterator_one_shot(test_dataset)
   x <-  iterator_get_next(iter)
   x_test_encoded <- encoder(x$img)  #check that [[1]] must not be added
-  #x_test_encoded %>%
-  #as.matrix() %>%
-  #as.data.frame() %>%
   prediction = as.data.frame(as.matrix(x_test_encoded))
-  #mutate(class = class_names[fashion$test$y + 1]) %>%
-  #mutate(class = test_img_meta$species) %>%
-  #mutate(variable = test_data$meta) %>%
-  #mutate(variable = as.numeric(x$y)) %>% # variable to be mapped accross latent space
-  #ggplot(aes(x = V1, y = V2, colour = variable)) + geom_point() +
-  
+
   if(latent_dim>3){
     ggplot(aes(x = V1, y = V2, colour = 1), data = prediction) + geom_point() +
       geom_point(data = prediction, aes(x = V3, y = V4, colour = 2)) +
@@ -406,7 +315,6 @@ show_latent_space <- function(epoch) {
       theme(plot.margin = unit(c(0, 0, 0, 0), "null")) +
       theme(panel.spacing = unit(c(0, 0, 0, 0), "null"))
   }
-  
   ggsave(
     paste0(outdir,"mmd_latentspace_epoch", epoch, ".png"),
     width = 10,
@@ -414,8 +322,6 @@ show_latent_space <- function(epoch) {
     units = "cm"
   )
 }
-
-
 
 
 show_grid <- function(epoch) {
@@ -428,9 +334,7 @@ show_grid <- function(epoch) {
   grid_x <- seq(-grid_axis, grid_axis, length.out = n)
   grid_y <- seq(-grid_axis, grid_axis, length.out = n)
   
-  
   rows <- NULL
-  
   for (i in 1:length(grid_x)) {
     column <- NULL
     for (j in 1:length(grid_y)) {
@@ -522,7 +426,6 @@ encode_vs_decode <- function(epoch) {
 }
 
 
-
 # Training loop -----------------------------------------------------------
 
 
@@ -587,13 +490,6 @@ for (epoch in seq_len(num_epochs)) {
       decoder_gradients, decoder$variables
     )))
     
-    
-    # TODO
-    # https://stackoverflow.com/questions/54284274/tensorflow-how-to-initialize-global-step
-    # check how global step is defined in apply_gradients
-    
-    
-    
   })
   
   checkpoint$save(file_prefix = checkpoint_prefix)
@@ -627,23 +523,16 @@ for (epoch in seq_len(num_epochs)) {
 }
 
 
-
-
-
-############################
-#APLICATION
+# Encode all tiles into the latent feature space
 
 encoder
 
-
 checkpoint2 = checkpoint
 
-
-status= checkpoint2$restore(tf$train$latest_checkpoint("D:/data_ortho_confobi_sac/1_results_256_200lv_250epoch/checkpoints_cvae")) # checkpoint file can also be modified to point not to the latest but another epoch
+status= checkpoint2$restore(tf$train$latest_checkpoint("PATH/checkpoints_cvae")) # checkpoint file can also be modified to point not to the latest but another epoch
 status$assert_existing_objects_matched()
 
-root_dir = "D:/data_ortho_confobi_sac/input_img_jpeg/data_ortho_confobi_sac/input_img"
-#root_dir = "cvae_sac/input_img_jpeg/data_ortho_confobi_sac/input_img"
+root_dir = "PATH"
 plot_dir = list.dirs(root_dir, recursive = F)
 
 for(i in 1:length(plot_dir)){
@@ -667,24 +556,3 @@ for(i in 1:length(plot_dir)){
   write.csv(meta, paste0("D:/data_ortho_confobi_sac/1_results_256_200lv_250epoch_latent/", basename(plot_dir[i]),".csv"))
   
 }
-
-
-
-
-# info on checkpoints, etc...:
-#https://tensorflow.rstudio.com/tutorials/beginners/basic-ml/tutorial_save_and_restore/
-#https://tensorflow.rstudio.com/guide/saving/checkpoints/
-
-#fresh_model %>% load_model_weights_tf(filepath = checkpoint_path)
-#fresh_model %>% evaluate(test_images, test_labels, verbose = 0)
-
-# 
-# encoder2 = encoder
-# encoder2 %>% load_model_weights_tf(filepath = "D:/data_ortho_confobi_sac/1_results/checkpoints_cvae/ckpt-1")
-# 
-# 
-# encoder2 %>% save_model_weights_tf("checkpoints/cp.ckpt")
-# 
-# 
-# new_model <- encoder
-# new_model %>% load_model_weights_tf('checkpoints/cp.ckpt')
