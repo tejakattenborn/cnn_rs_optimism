@@ -1,5 +1,13 @@
 
 
+############## Description
+
+# split the tiled image data into spatial folds corresponding to the UAV orthoimage flights. This is required for the independend validation (block cross validation)
+# Manuscript: Kattenborn et al. > Spatially autocorrelated training and validation samples inflate performance assessment of convolutional neural networks
+# teja dot kattenborn at uni uni minus leipzig dot de
+
+
+############## Code
 
 sites <- list.files("02_pipeline/img/")
 pathImg <- list.files("02_pipeline/img", pattern = ".png", recursive = T, full.names = T)
