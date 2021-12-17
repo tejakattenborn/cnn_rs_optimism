@@ -1,4 +1,18 @@
 
+
+############## Description
+
+# Various helper functions for the CNN-based species segmentation, e.g.
+#   - keras model functions
+#   - tf dataset routines
+#   - one-hot decodings
+# Manuscript: Kattenborn et al. > Spatially autocorrelated training and validation samples inflate performance assessment of convolutional neural networks
+# teja dot kattenborn at uni uni minus leipzig dot de
+
+
+############## Code
+
+
 # load keras model --------------------------------------------------------
 
 loadModel = function(path, epoch = NULL, compile = FALSE, custom_objects = NULL) {
