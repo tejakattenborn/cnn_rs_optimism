@@ -1,5 +1,15 @@
 
 
+############## Description
+
+# Preprocessing of orthoimages and reference data into standardized image tiles as required for CNN training
+# Manuscript: Kattenborn et al. > Spatially autocorrelated training and validation samples inflate performance assessment of convolutional neural networks
+# teja dot kattenborn at uni uni minus leipzig dot de
+
+
+############## Code
+
+
 # libraries + path --------------------------------------------------------
 
 pkgs <- c("raster", "rgdal", "rgeos", "foreach", "doParallel", "magick")
@@ -9,7 +19,7 @@ sapply(pkgs, require, character.only = TRUE)
 source("00_helper_functions.R")
 
 
-dataDir <- "/media/sysgen/Volume/Felix/UAVforSAT/TreeSeg/"
+dataDir <- "PATH"
 
 
 
