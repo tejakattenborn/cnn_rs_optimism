@@ -1,10 +1,22 @@
 
+
+############## Description
+
+# Create statistics and figures of the optimism (inflated accuracy by spatially dependent data)
+# Manuscript: Kattenborn et al. > Spatially autocorrelated training and validation samples inflate performance assessment of convolutional neural networks
+# teja dot kattenborn at uni uni minus leipzig dot de
+
+
+############## Code
+
+
 require(ggplot2)
 require(ggpubr)
 library(tidyverse)
 
 
-setwd("G:/My Drive/paper/paper_cnn_spatial_autocorrelation/plots_statistics")
+setwd("PATH")
+no_plots = 47 # number of available orthoimage flights
 
 
 all_runs_f1 = list.files("SAC_eval_fold1", recursive = F, full.names = T)
@@ -14,30 +26,16 @@ all_runs_f4 = list.files("SAC_eval_fold4", recursive = F, full.names = T)
 all_runs_f5 = list.files("SAC_eval_fold5", recursive = F, full.names = T)
 
 
-results_sac_f1 = matrix(NA, ncol=12, nrow=47)
-results_nosac_f1 = matrix(NA, ncol=12, nrow=47)
-results_sac_f2 = matrix(NA, ncol=12, nrow=47)
-results_nosac_f2 = matrix(NA, ncol=12, nrow=47)
-results_sac_f3 = matrix(NA, ncol=12, nrow=47)
-results_nosac_f3 = matrix(NA, ncol=12, nrow=47)
-results_sac_f4 = matrix(NA, ncol=12, nrow=47)
-results_nosac_f4 = matrix(NA, ncol=12, nrow=47)
-results_sac_f5 = matrix(NA, ncol=12, nrow=47)
-results_nosac_f5 = matrix(NA, ncol=12, nrow=47)
-
-
-# # mean species mean plot
-# mean(rowMeans(accuracies_testsac$F1_site_species, na.rm = TRUE), na.rm=TRUE)
-# mean(rowMeans(accuracies_testnosac$F1_site_species, na.rm = TRUE), na.rm=TRUE)
-# 
-# # mean plot mean species
-# mean(colMeans(accuracies_testsac$F1_site_species, na.rm=TRUE), na.rm = TRUE)
-# mean(colMeans(accuracies_testnosac$F1_site_species, na.rm=TRUE), na.rm = TRUE)
-# 
-# # mean
-# mean(accuracies_testsac$F1_site_species, na.rm = TRUE)
-# mean(accuracies_testnosac$F1_site_species, na.rm = TRUE)
-
+results_sac_f1 = matrix(NA, ncol=12, nrow=no_plots)
+results_nosac_f1 = matrix(NA, ncol=12, nrow=no_plots)
+results_sac_f2 = matrix(NA, ncol=12, nrow=no_plots)
+results_nosac_f2 = matrix(NA, ncol=12, nrow=no_plots)
+results_sac_f3 = matrix(NA, ncol=12, nrow=no_plots)
+results_nosac_f3 = matrix(NA, ncol=12, nrow=no_plots)
+results_sac_f4 = matrix(NA, ncol=12, nrow=no_plots)
+results_nosac_f4 = matrix(NA, ncol=12, nrow=no_plots)
+results_sac_f5 = matrix(NA, ncol=12, nrow=no_plots)
+results_nosac_f5 = matrix(NA, ncol=12, nrow=no_plots)
 
 
 for(iter in 1:length(all_runs_f1)){
@@ -73,22 +71,22 @@ results_nosac = apply(simplify2array(results_nosac), 1:2, mean, na.rm=TRUE)
 
 
 
-results_sac_m = data.frame(matrix(NA, nrow = 47*12, ncol=3))
+results_sac_m = data.frame(matrix(NA, nrow = no_plots*12, ncol=3))
 colnames(results_sac_m) = c("score", "no_train", "aug")
 results_sac_m$score =  as.vector(results_sac)
-results_sac_m$no_train = c(rep("n = 10", 4*47), rep("n = 25", 4*47), rep("n = 40", 4*47))
-results_sac_m$aug = rep(c(rep("rad", 47), rep("geo", 47), rep("both", 47), rep("none", 47)), 3)
+results_sac_m$no_train = c(rep("n = 10", 4*no_plots), rep("n = 25", 4*no_plots), rep("n = 40", 4*no_plots))
+results_sac_m$aug = rep(c(rep("rad", no_plots), rep("geo", no_plots), rep("both", no_plots), rep("none", no_plots)), 3)
 
-results_nosac_m = data.frame(matrix(NA, nrow = 47*12, ncol=3))
+results_nosac_m = data.frame(matrix(NA, nrow = no_plots*12, ncol=3))
 colnames(results_nosac_m) = c("score", "no_train", "aug")
 results_nosac_m$score =  as.vector(results_nosac)
-results_nosac_m$no_train = c(rep("n = 10", 4*47), rep("n = 25", 4*47), rep("n = 40", 4*47))
-results_nosac_m$aug = rep(c(rep("rad", 47), rep("geo", 47), rep("both", 47), rep("none", 47)), 3)
+results_nosac_m$no_train = c(rep("n = 10", 4*no_plots), rep("n = 25", 4*no_plots), rep("n = 40", 4*no_plots))
+results_nosac_m$aug = rep(c(rep("rad", no_plots), rep("geo", no_plots), rep("both", no_plots), rep("none", no_plots)), 3)
 
 
 
 results_sac_m$aug <- factor(results_sac_m$aug,
-                              levels = c('none','rad', 'geo', 'both'),ordered = TRUE)
+                            levels = c('none','rad', 'geo', 'both'),ordered = TRUE)
 
 results_nosac_m$aug <- factor(results_nosac_m$aug,
                               levels = c('none','rad', 'geo', 'both'),ordered = TRUE)
@@ -125,7 +123,7 @@ p_nosac = results_nosac_m[complete.cases(results_nosac_m),] %>%
   ylim(0.2,1) +
   ggtitle(label = "independent test data") +
   guides(fill=guide_legend(title="data augmentation:")) + 
-
+  
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title.y=element_blank(),
@@ -141,12 +139,9 @@ p_both = ggarrange(p_sac, p_nosac,
                    ncol = 2, nrow = 1,
                    widths = c(1.1,1))
 p_both
-
-
 pdf("fig_performance_bias_v2.pdf", width=7, height=4)
 p_both
 dev.off()
-
 
 
 
@@ -181,6 +176,7 @@ t.test(n_40_sac_aug - n_40_nosac_aug, n_10_sac_noaug - n_40_nosac_noaug,
        paired = FALSE, alternative = "two.sided", na.action = "na.omit")
 
 
+
 # test if F-scores are significantly lower for the augmentation method, i.e. if the mean of augmentation='none' is significantly greater.
 
 mean(results_nosac_m$score[results_nosac_m$aug == "geo"], na.rm=TRUE)
@@ -195,7 +191,6 @@ t.test(results_nosac_m$score[results_nosac_m$aug == "none"], results_nosac_m$sco
 t.test(results_nosac_m$score[results_nosac_m$aug == "none"], results_nosac_m$score[results_nosac_m$aug == "both"],
        paired = TRUE, alternative = "greater", na.action = "na.omit")
 
-
 mean(results_nosac_m$score[results_nosac_m$aug == "geo"], na.rm=TRUE)
 mean(results_nosac_m$score[results_nosac_m$aug == "none"], na.rm=TRUE)
 
@@ -208,12 +203,9 @@ t.test(results_nosac_m$score[results_nosac_m$aug == "both"], results_nosac_m$sco
 
 
 
-
 # test if F-scores are significantly lower for independent validation, i.e. if the mean is significantly greater.
 t.test(results_sac_m$score, results_nosac_m$score,
        paired = TRUE, alternative = "greater", na.action = "na.omit")
-
-
 
 
 # mean across augmentation schemes for val-sac
