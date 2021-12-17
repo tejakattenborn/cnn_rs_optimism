@@ -1,5 +1,14 @@
 
-# libraries + path -----------------------------------------------------------
+
+############## Description
+
+# Train the CNN segmentation (Unet) using different augmentation strategies and export the model objects the epochs.
+# Manuscript: Kattenborn et al. > Spatially autocorrelated training and validation samples inflate performance assessment of convolutional neural networks
+# teja dot kattenborn at uni uni minus leipzig dot de
+
+
+############## Code
+
 
 pkgs <- c("keras", "tidyverse", "tibble", "tensorflow", "ggplot2")
 sapply(pkgs, require, character.only = TRUE)
